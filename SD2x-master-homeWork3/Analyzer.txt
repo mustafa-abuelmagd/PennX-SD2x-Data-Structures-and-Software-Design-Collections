@@ -1,0 +1,260 @@
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Scanner;
+import java.util.Set;
+import java.util.StringTokenizer;
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
+
+
+/*
+ * SD2x Homework #3
+ * Implement the methods below according to the specification in the assignment description.
+ * Please be sure not to change the method signatures!
+ */
+public class Analyzer {
+
+	/*
+	 * Implement this method in Part 1
+	 */
+	public static List<Sentence> readFile(String filename) throws IOException {
+
+		/* IMPLEMENT THIS METHOD! */
+
+		LinkedList<Sentence> sentences = new LinkedList<Sentence>();
+		try {
+			File file = new File(filename);
+			Scanner scnr = new Scanner(file);
+			String text = "";
+			int score = 0;
+			while(scnr.hasNext()) {
+				if(scnr.hasNextInt()) {
+					score = scnr.nextInt();
+					while(scnr.hasNextInt())
+						score = score * 10 + scnr.nextInt();
+					text = scnr.nextLine();				
+					if(text.charAt(0) == ' ' && score >= -2 && score <= 2) {
+						text = text.trim();
+						if(!text.equals(""))
+							sentences.add(new Sentence(score,text));
+					}
+				}else
+					scnr.next();
+			}
+			scnr.close();
+		}catch(Exception e) {
+			e.printStackTrace();
+		}
+		return sentences;
+	}
+
+	public static boolean isDouble(final String s) {
+		try {
+			Double.valueOf(s);
+			return true;
+		} catch (NumberFormatException numberFormatException) {
+			return false;
+		}
+	}
+
+
+	protected static Word findIfPresent(Word source, Set<Word> set)
+	{
+		if (set.contains(source)) {
+			for (Word obj : set) {
+				if (obj.equals(source))
+					return obj;
+			}
+		}
+
+		return null;
+	}
+
+	/*
+	 * Implement this method in Part 2
+	 */
+	public static Set<Word> allWords(List<Sentence> sentences) {
+
+
+		/* IMPLEMENT THIS METHOD! */
+		Set<Word> words = new HashSet<Word>();
+		try {
+			words.clear();
+			if(sentences.get(0) == null || sentences.isEmpty() || sentences.size() ==0)
+				return words;
+
+
+			loop1: 
+				for( Sentence s : sentences) {
+					if(s== null)continue loop1;
+					String str= s.getText().toLowerCase();
+					StringTokenizer st = new StringTokenizer(str);
+
+					loop2: 
+						while (st.hasMoreTokens()) {
+							String text=st.nextToken();
+							//if(!(text.matches("^[a-z].*$"))) continue loop2; 
+							if(!(isValidWord(text))) continue loop2; 
+
+							Word word = new Word(text);
+							if (!words.contains(word)) words.add((word)); 
+
+							else if (words.contains(word)) {
+								Word w = findIfPresent(word, words);
+								w.increaseTotal(1);  }
+
+							else continue;
+						}
+				}
+			if (words.size()>0) return words;
+
+		}
+		catch (IndexOutOfBoundsException e) {
+			words.clear();
+			return words;
+
+		}
+		catch (NullPointerException e ) {
+			words.clear();
+			return words;
+		}
+		return null; // this line is here only so this code will compile if you don't modify it
+
+	}
+
+	/*
+	 * Implement this method in Part 3
+	 */
+	public static Map<String, Double> calculateScores(Set<Word> words) {
+
+		/* IMPLEMENT THIS METHOD! */
+		HashMap<String, Double> map = new HashMap<String, Double>();
+		try {
+			if(words.isEmpty()|| words.size()==0 || words==null) return map;
+
+			loop1:for(Word w : words) {
+				if(w==null)continue loop1;
+				//if(!(w.getText().matches("^[a-z].*$"))) continue loop1; 
+
+				double d =w.calculateScore();
+				map.put(w.getText(), d);
+
+			}
+			if(map.size()>=0) return map;}
+
+
+
+
+		catch (NullPointerException e ) {
+			map.clear();
+			return map;
+		}
+		return null; // this line is here only so this code will compile if you don't modify it
+
+	}
+
+	/*
+	 * Implement this method in Part 4
+	 */
+
+	public static boolean isValidNumber(String s) {
+
+		char [] C = s.toCharArray();
+		if(C.length > 1) return false;
+		for (char c : C ) 
+			if (!Character.isDigit(c)) return false;
+		return true;
+	}
+
+	public static boolean isValidWord(String s) {
+		for (char c : s.toCharArray()) 
+			if (!Character.isLetterOrDigit(c)) return false;
+		return true;
+	}
+
+	public static boolean isAllUnvalidWords(String s) {
+		if(s==null || s.isEmpty())return false;
+		String str= s.toLowerCase();
+		StringTokenizer st = new StringTokenizer(str);
+		loop1:
+			while(st.hasMoreTokens()) {
+				String stt = st.nextToken();
+				if(!(isValidWord(stt))) continue loop1;
+				//if(!(stt.matches("^[a-z].*$"))) continue loop1;
+
+				return false;
+			}
+
+
+		return true;
+	}
+
+	public static double calculateSentenceScore(Map<String, Double> wordScores, String sentence) {
+
+		/* IMPLEMENT THIS METHOD! */
+		if(wordScores==null || wordScores.isEmpty() || sentence == null || sentence.isEmpty())return 0;
+		if( isAllUnvalidWords(sentence))return 0;
+
+		double score;
+		double total = 0.0;
+
+
+		String str= sentence.toLowerCase();
+		StringTokenizer st = new StringTokenizer(str);
+		int j = st.countTokens();
+
+		loop1: 
+			while(st.hasMoreTokens()) {
+				String text=st.nextToken();
+				if(!(isValidWord(text))) continue loop1;
+				//if(!(text.matches("^[a-z].*$"))) continue loop1;
+
+
+				if(wordScores.containsKey(text)) {
+					//score= wordScores.get(text);
+					total += wordScores.get(text);}
+
+
+				else if(!(wordScores.containsKey(text) == false)){
+					wordScores.put(text, 0.0);
+					total += wordScores.get(text);
+				}
+			}
+		total /=(double) j;
+
+		if(wordScores.isEmpty() == false) return total;
+
+
+		return 0; // this line is here only so this code will compile if you don't modify it
+
+	}
+
+	/*
+	 * This method is here to help you run your program. Y
+	 * You may modify it as needed.
+	 */
+	public static void main(String[] args) throws IOException {
+		if (args.length == 0) {
+			System.out.println("Please specify the name of the input file");
+			System.exit(0);
+		}
+		String filename = args[0];
+		System.out.print("Please enter a sentence: ");
+		Scanner in = new Scanner(System.in);
+		String sentence = in.nextLine();
+		in.close();
+		List<Sentence> sentences = Analyzer.readFile(filename);
+		Set<Word> words = Analyzer.allWords(sentences);
+		Map<String, Double> wordScores = Analyzer.calculateScores(words);
+		double score = Analyzer.calculateSentenceScore(wordScores, sentence);
+		System.out.println("The sentiment score is " + score);
+	}
+}
